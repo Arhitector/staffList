@@ -14,25 +14,6 @@
 		},
 		getTemplate: function (idTemplate) {
 			return _.template(document.getElementById(idTemplate).innerHTML)
-		},
-		getServerData: function (pathToServer) {
-			var xhr = new XMLHttpRequest();
-			xhr.open('GET', pathToServer, false);
-			xhr.send();
-			if (xhr.status != 200) {
-				console.log(xhr.status + ': ' + xhr.statusText);
-			} else {
-				return xhr.responseText;
-			}
-		},
-		jsonParser: function (linkToData) {
-			return JSON.parse(this.getServerData(linkToData))
-		},
-		getUserData: function (id) {
-			return this.jsonParser(this.options.jsonPath + "?id=" + id)[0];
-		},
-		getListUsersData: function () {
-			return this.jsonParser(this.options.jsonPath);
 		}
 	};
 	// USER MODEL
@@ -47,9 +28,7 @@
 	// USER VIEW
 	Staff.Views.UserView = Backbone.View.extend({
 		initialize: function () {
-			vent.on("renderUser", this.render, this);
-			vent.on("editSite", this.render, this);
-			vent.on("editEmail", this.render, this);
+			vent.on("renderUser editSite editEmail", this.render, this);
 		},
 		className: "user",
 		el:document.getElementById("block"),
@@ -110,11 +89,7 @@
 	// USERS MODEl (collection)
 	Staff.Collections.UserCollection = Backbone.Collection.extend({
 		model: Staff.Models.UserModel,
-		url: helpers.options.jsonPath,
-		parse: function(response) {
-			this.push(response);
-			return this.model;
-		}
+		url: helpers.options.jsonPath
 	});
 	// USERS VEIW (collection)
 	Staff.Views.UsersView = Backbone.View.extend({
@@ -124,20 +99,26 @@
 		el: document.getElementById("block"),
 		template: helpers.getTemplate("usersList"),
 		render: function () {
+			var renderData = "";
 			this.el.innerHTML = "";
 			this.collection.each(function (userView) {
-				this.el.insertAdjacentHTML("beforeEnd", this.template(userView.attributes));
+				renderData += this.template(userView.attributes);
 			}, this);
+				this.el.innerHTML = renderData;
 			return this;
 		}
 	});
 	// EVENTS VIEW
-
-
-	var userCollection = new Staff.Collections.UserCollection(helpers.getListUsersData());
+	var userCollection = new Staff.Collections.UserCollection();
+	userCollection.fetch({
+		async: false,
+		success: function (response,xhr) {
+		},
+		error: function (model, xhr, options) {
+			console.log(xhr);
+		}
+	});
 	var usersView = new Staff.Views.UsersView({collection: userCollection});
-
-
 	var userModel = new Staff.Models.UserModel();
 	var userView = new Staff.Views.UserView({collection: userCollection});
 
