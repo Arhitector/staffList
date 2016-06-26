@@ -38,6 +38,7 @@
 			"click #editSite": "editSite",
 			"click #save": "saveData"
 		},
+		isModelUpdated: false,
 		validate: {
 			checkForValue: function (str) {
 				if (!str) {
@@ -61,6 +62,7 @@
 			var newValue = prompt("Change email", this.model.get("email"));
 			if (this.validate.email(newValue)) {
 				this.model.set({"email": newValue});
+				this.isModelUpdated = true;
 			}
 			vent.trigger("editEmail");
 		},
@@ -68,14 +70,20 @@
 			var newValue = prompt("Change site", this.model.get("website"));
 			if (this.validate.site(newValue)) {
 				this.model.set({"website": newValue});
-				// this.render();
+				this.isModelUpdated = true;
 			}
 			vent.trigger("editSite");
 		},
 		saveData: function () {
-			var response = this.model.save();
-			if(response.status === 200) {
-				alert("your data was sended to server");
+			if (this.isModelUpdated) {
+				this.model.save(null, {
+					success: function (model, response) {
+						alert("User was saved");
+					},
+					error: function (model, error) {
+						alert("There is a problem: " + error.status);
+					}
+				});
 			}
 		},
 		render: function (id) {
